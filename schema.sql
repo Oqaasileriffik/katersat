@@ -7,7 +7,6 @@ PRAGMA threads = 4;
 PRAGMA trusted_schema = OFF;
 PRAGMA page_size = 65535;
 VACUUM;
-PRAGMA journal_mode = WAL;
 PRAGMA locking_mode = NORMAL;
 
 
@@ -135,15 +134,15 @@ CREATE TABLE kat_lexeme_attrs (
 );
 
 
-CREATE TABLE kat_longest_match (
+CREATE TABLE kat_long_raw (
 	fst_ana TEXT NOT NULL,
 	lex_id INTEGER NOT NULL,
 
 	FOREIGN KEY (lex_id) REFERENCES kat_lexemes (lex_id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
-CREATE INDEX kat_longest_match_lex_id ON kat_longest_match (lex_id);
-CREATE INDEX kat_longest_match_fst_ana ON kat_longest_match (substr(fst_ana,1,16));
+CREATE INDEX kat_long_raw_lex_id ON kat_long_raw (lex_id);
+CREATE INDEX kat_long_raw_fst_ana ON kat_long_raw (substr(fst_ana,1,16));
 
 
 CREATE TABLE glue_lexeme_synonyms (

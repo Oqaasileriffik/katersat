@@ -5,13 +5,13 @@ import os
 import sqlite3
 
 dir = os.path.dirname(__file__)
-con = sqlite3.connect(dir + '/katersat.sqlite', isolation_level=None)
+con = sqlite3.connect('file:' + dir + '/katersat.sqlite?mode=ro', uri=True, isolation_level=None, check_same_thread=False)
 db = con.cursor()
 
 
 # Fetch map of semantic classes, turning verbal semantic codes into their English equivalent
 sem_map = {}
-db.execute("SELECT sem_code, sem_eng FROM kat_semclasses")
+db.execute("SELECT sem_code, sem_eng FROM kat_semclasses WHERE sem_code != 'UNK'")
 while row := db.fetchone():
 	sem_map[row[0]] = row[0]
 	if row[0][0:2] == 'V.' and (m := re.match(r'^:([^\s,]+)', row[1])) != None:
@@ -21,7 +21,7 @@ while row := db.fetchone():
 for line in sys.stdin:
 	line = line.rstrip()
 
-	if not line.startswith('\t') or not re.search(r' (?:N|V|Num|Adv|Interj|Pron|Prop)(?: |$)', line):
+	if not line.startswith('\t"') or not re.search(r' (?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)', line):
 		print(line)
 		continue
 
@@ -46,23 +46,54 @@ for line in sys.stdin:
 			line = None
 
 		m = None
-		if (m := re.match(r'^(N|V|Num|Adv|Interj|Pron|Prop)$', tag)) or re.match(r'^\p{Lu}+$', tag):
+		if (m := re.match(r'^(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', tag)) or re.match(r'^\p{Lu}\p{Lu}+$', tag):
 			if not m:
 				m = re.search(r' Der/([nv])[nv]', line)
 			pos = m[1][0:1].upper() + m[1][1:]
-			db.execute("SELECT DISTINCT lex_semclass, lex_sem2 FROM kat_longest_match NATURAL JOIN kat_lexemes WHERE fst_ana = ? AND lex_semclass != 'UNK'", [cur + pos])
-			new_outs = []
-			while sem := db.fetchone():
-				for out in outs:
-					code = ''
-					if sem[0] != 'UNK' and sem[1] != 'UNK':
-						code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
-					else:
-						code = f'Sem/{sem_map[sem[0]]}'
-					new_outs.append(out + code + ' ')
+			ana = cur + pos
 
-			if new_outs:
-				outs = sorted(set(new_outs))
+			anas = []
+			if (m := re.match(r'^((?: \d?\p{Lu}\p{Ll}[^/\s]*)+)', line)):
+				anas.append(ana + m[1])
+			if pos != 'V':
+				anas.append(ana + ' Abs Sg')
+				anas.append(ana + ' Ins Sg')
+				anas.append(ana + ' Abs Pl')
+				anas.append(ana + ' Ins Pl')
+			if re.search(r'^.* Gram/IV', ana):
+				anas.append(ana + ' Ind 3Sg')
+				anas.append(ana + ' Ind 3Pl')
+			if re.search(r'^.* Gram/TV', ana):
+				anas.append(ana + ' Ind 3Sg 3SgO')
+				anas.append(ana + ' Ind 3Pl 3PlO')
+
+			# Finding matching analyses as its own step is 3 orders of magnitude faster
+			ids = []
+			for ana in anas:
+				did = False
+				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw WHERE substr(fst_ana,1,16) = ?", [ana[0:16]])
+				while r := db.fetchone():
+					if r[0] == ana:
+						ids.append(str(r[1]))
+						did = True
+				if did:
+					break
+
+			if ids:
+				db.execute("SELECT DISTINCT lex_semclass, lex_sem2 FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
+				new_outs = []
+				while sem := db.fetchone():
+					for out in outs:
+						code = ''
+						if sem[0] != 'UNK' and sem[1] != 'UNK':
+							code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
+						else:
+							code = f'Sem/{sem_map[sem[0]]}'
+						new_outs.append(out + code + ' ')
+
+				if new_outs:
+					outs = sorted(set(new_outs))
+
 			cur += tag + ' ';
 		elif tag.startswith('"') or re.match(r'^Der/', tag) or re.match(r'^Gram/[HIT]V$', tag) or re.match(r'^i?Sem/', tag):
 			cur += tag + ' ';
