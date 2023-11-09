@@ -58,7 +58,7 @@ for row in rows:
 		if not stem:
 			continue
 		m = None
-		if not (m := re.match('^(\+?[^+]*)\+(.*)$', stem)):
+		if not (m := re.match(r'^(\+?[^+]*)\+(.*)$', stem)):
 			print(f'Warning: Lexeme {id} invalid analysis {stem}')
 			continue
 		stem = f'"{m[1]}" ' + m[2].replace('+', ' ')
