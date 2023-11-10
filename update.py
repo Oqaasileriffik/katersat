@@ -52,8 +52,8 @@ rows = db.fetchall()
 for row in rows:
 	id = row[0]
 	stems = row[2].strip().split('\n')
-	if ' Der/' in row[1]:
-		db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [row[1], id])
+	if m := re.search(r' Der/[nv]([nv])', row[1]):
+		db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [row[1] + ' ' + m[1].capitalize(), id])
 	for stem in stems:
 		if not stem:
 			continue
