@@ -19,6 +19,7 @@ wc_map_s = {
 	'Prop': 'Prop',
 	'Num': 'Num',
 	'Symbol': 'Symbol',
+	'Adj': 'Adj',
 }
 wc_map_k = {v: k for k, v in wc_map_s.items()}
 
