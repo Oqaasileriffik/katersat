@@ -111,19 +111,33 @@ for line in sys.stdin:
 				if did:
 					break
 
+				# Allow looking up morphemes without Gram/[HIT]V
+				if not ana.startswith('"'):
+					ana = re.sub(r' Gram/[HIT]V ', r' ', ana)
+					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw WHERE substr(fst_ana,1,16) = ?", [ana[0:16]])
+					while r := db.fetchone():
+						if r[0] == ana:
+							ids.append(str(r[1]))
+							did = True
+					if did:
+						break
+
 			if ids:
 				lm = re.sub(r' \S+?/\S+', r'', lm)
 				lm = re.escape(lm).replace(r'\ ', ' ')
 				lm = re.sub(r'( \p{Lu}\p{Lu}+)', r'.*?\1', lm)
 				lm += '.*? (' + wc_raw + ' )'
 
-				if ana.startswith('"'):
-					# If it's a full word match, only consider matches with correct semantics
-					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, lang])
-				else:
-					# But semantics don't make sense for morpheme sequences
+				tr = None
+				db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, lang])
+				tr = db.fetchone()
+
+				# If we did not find a match with semantics, try without
+				if not tr:
 					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [lang])
-				if (tr := db.fetchone()):
+					tr = db.fetchone()
+
+				if tr:
 					wc = wc_map_k[tr[3].capitalize()]
 
 					sem = ''
