@@ -46,15 +46,17 @@ for line in sys.stdin:
 			line = None
 
 		m = None
-		if (m := re.match(r'^(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', tag)) or re.match(r'^\p{Lu}\p{Lu}+$', tag):
+		if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', tag)) or re.match(r'^\p{Lu}\p{Lu}+$', tag):
 			if not m:
 				m = re.search(r' Der/([nv])[nv]', line)
+			if not m:
+				m = re.search(r' i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)', line)
 			pos = m[1][0:1].upper() + m[1][1:]
 			ana = cur + pos
 
 			anas = []
-			if (m := re.match(r'^((?: \d?\p{Lu}\p{Ll}[^/\s]*)+)', line)):
-				anas.append(ana + m[1])
+			if (m := re.match(r'^((?: i?\d?\p{Lu}\p{Ll}[^/\s]*)+)', line)):
+				anas.append(ana + re.sub(r' i', r' ', m[1]))
 			if pos != 'V':
 				anas.append(ana + ' Abs Sg')
 				anas.append(ana + ' Ins Sg')
