@@ -23,6 +23,7 @@ for line in sys.stdin:
 
 	if not line.startswith('\t"') or not re.search(r' (?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)', line):
 		print(line)
+		sys.stdout.flush()
 		continue
 
 	line = line.lstrip()
@@ -43,7 +44,7 @@ for line in sys.stdin:
 			line = line[stop:]
 		else:
 			tag = line
-			line = None
+			line = ''
 
 		m = None
 		if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', tag)) or re.match(r'^\p{Lu}\p{Lu}+$', tag):
@@ -51,6 +52,8 @@ for line in sys.stdin:
 				m = re.search(r' Der/([nv])[nv]', line)
 			if not m:
 				m = re.search(r' i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)', line)
+			if not m:
+				m = ['', '']
 			pos = m[1][0:1].upper() + m[1][1:]
 			ana = cur + pos
 
@@ -158,3 +161,4 @@ for line in sys.stdin:
 		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', out)) != out:
 			out = o
 		print('\t' + out)
+	sys.stdout.flush()

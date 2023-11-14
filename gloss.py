@@ -20,6 +20,8 @@ wc_map_s = {
 	'Num': 'Num',
 	'Symbol': 'Symbol',
 	'Adj': 'Adj',
+	'Part': 'Part',
+	'Prep': 'Prep',
 }
 wc_map_k = {v: k for k, v in wc_map_s.items()}
 
@@ -45,9 +47,10 @@ for line in sys.stdin:
 	if not line.startswith('\t"') or (' <tr-done> ' in line) or not re.search(r' (?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)', line):
 		printed = set()
 		print(line)
+		sys.stdout.flush()
 		continue
 
-	line = ' <dmtr> ' + line.strip()
+	line = ' <dmtr> ' + line.strip() + ' '
 	orig = line
 
 	while ' <dmtr> ' in orig:
@@ -56,10 +59,9 @@ for line in sys.stdin:
 		line = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur)/(\S+)', r'', line)
 		line = line.replace(' gram/', ' Gram/')
 		line = line.replace(' iSem/', ' Sem/')
-		line += ' '
 
 		# Longest match
-		while (m := re.search(r'<dmtr> (.*) (i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))( .*)$', line)) or (m := re.search(r'<dmtr> (.*) (\p{Lu}\p{Lu}+ Der/[nv][nv])( .*)$', line)):
+		while (m := re.search(r'<dmtr> (.*) (i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))( .*)$', line)) or (m := re.search(r'<dmtr> (.*) ((?:U|\p{Lu}\p{Lu}+) Der/[nv][nv])( .*)$', line)):
 			lm = m[1]
 			wc_raw = m[2]
 			wc_s = m[2]
@@ -84,8 +86,8 @@ for line in sys.stdin:
 			# Raw match for morpheme sequences
 			anas.append(ana)
 			# First try actual case/flexion
-			if (m := re.match(r'^((?: \d?\p{Lu}\p{Ll}[^/\s]*)+)', rest)):
-				anas.append(ana + m[1])
+			if (m := re.match(r'^((?: i?\d?\p{Lu}\p{Ll}[^/\s]*)+)', rest)):
+				anas.append(ana + re.sub(r' i', r'', m[1]))
 			# Then fall back to baseforms
 			if wc_raw != 'V':
 				anas.append(ana + ' Abs Sg')
@@ -125,7 +127,8 @@ for line in sys.stdin:
 			if ids:
 				lm = re.sub(r' \S+?/\S+', r'', lm)
 				lm = re.escape(lm).replace(r'\ ', ' ')
-				lm = re.sub(r'( \p{Lu}\p{Lu}+)', r'.*?\1', lm)
+				lm = lm.replace('" ', '".*? ')
+				lm = re.sub(r'( (?:U|\p{Lu}\p{Lu}+))( |$)', r'.*?\1.*?\2', lm)
 				lm += '.*? (' + wc_raw + ' )'
 
 				tr = None
@@ -155,12 +158,12 @@ for line in sys.stdin:
 					line += ' '
 					continue
 
-			nline = re.sub(r'^(.+ \p{Lu}\p{Lu}+ Der/[nv][nv] ).*'+wc_raw+' .*$', r'\1', line)
+			nline = re.sub(r'^(.+ (?:U|\p{Lu}\p{Lu}+) Der/[nv][nv] ).*'+wc_raw+' .*$', r'\1', line)
 			if nline == line:
 				break
 			line = nline
 
-		if (m := re.search(r' (<dmtr>) ("[^"]+".*?) ((?:\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) ', orig)) or (m:= re.search(r' (<dmtr>) (\p{Lu}\p{Lu}+ .*?) ((?:\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) ', orig)):
+		if (m := re.search(r' (<dmtr>) ("[^"]+".*?) ((?:U|\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) ', orig)) or (m:= re.search(r' (<dmtr>) ((?:U|\p{Lu}\p{Lu}+) .*?) ((?:U|\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) ', orig)):
 			orig = orig.replace(f' {m[1]} {m[2]} {m[3]} ', f' {m[2]} {m[1]} {m[3]} ')
 		else:
 			orig = orig.replace(' <dmtr>', '')
@@ -171,9 +174,10 @@ for line in sys.stdin:
 	printed.add(orig)
 
 	# Mark semantics before derivation as internal
-	while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', orig)) != orig:
+	while (o := re.sub(r' (Sem/\S+.*? (?:U|\p{Lu}\p{Lu}+) )', r' i\1', orig)) != orig:
 		orig = o
 	# Mark word classes before derivation or other word classes as internal
-	while (o := re.sub(r' ((?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol) .*? (?:(?:\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) )', r' i\1', orig)) != orig:
+	while (o := re.sub(r' ((?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol) .*? (?:(?:U|\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) )', r' i\1', orig)) != orig:
 		orig = o
 	print(f'\t{orig}')
+	sys.stdout.flush()
