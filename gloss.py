@@ -87,7 +87,9 @@ for line in sys.stdin:
 			anas.append(ana)
 			# First try actual case/flexion
 			if (m := re.match(r'^((?: i?\d?\p{Lu}\p{Ll}[^/\s]*)+)', rest)):
-				anas.append(ana + re.sub(r' i', r'', m[1]))
+				flex = re.sub(r' i', r'', m[1])
+				anas.append(ana + flex)
+				anas.append(ana + re.sub(r' (Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)', r' Abs', flex))
 			# Then fall back to baseforms
 			if wc_raw != 'V':
 				anas.append(ana + ' Abs Sg')
