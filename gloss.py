@@ -56,7 +56,7 @@ for line in sys.stdin:
 	while ' <dmtr> ' in orig:
 		line = orig
 		line = re.sub(r' Gram/([HIT]V) ', r' gram/\1 ', line)
-		line = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur)/(\S+)', r'', line)
+		line = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb)/(\S+)', r'', line)
 		line = line.replace(' gram/', ' Gram/')
 		line = line.replace(' iSem/', ' Sem/')
 
