@@ -47,7 +47,7 @@ print('Converting longest match...')
 con = sqlite3.connect('katersat.sqlite')
 db = con.cursor()
 
-db.execute("SELECT lex_id, lex_lexeme, lex_stem FROM kat_lexemes WHERE lex_language = 'kal'")
+db.execute("SELECT lex_id, lex_lexeme, lex_stem FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme NOT LIKE '% %'")
 rows = db.fetchall()
 for row in rows:
 	id = row[0]
