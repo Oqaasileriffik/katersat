@@ -76,7 +76,7 @@ for line in sys.stdin:
 			ids = []
 			for ana in anas:
 				did = False
-				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass NOT LIKE 'meta-cat-%'", [ana[0:16]])
+				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
 				while r := db.fetchone():
 					if r[0] == ana:
 						ids.append(str(r[1]))
