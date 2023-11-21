@@ -26,41 +26,36 @@ for line in sys.stdin:
 		sys.stdout.flush()
 		continue
 
-	line = line.lstrip()
-	orig = line
+	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+))(?: |$))', line.strip())
+	cleans = []
+	for orig in origs:
+		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
+		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb)/(\S+)', r'', orig)
+		orig = orig.replace(' gram/', ' Gram/')
+		cleans.append(orig)
 
-	outs = ['']
-	cur = ''
-	while line:
-		line = line.lstrip()
-		stop = 0
-		tag = ''
+	sems = {}
+	for i in range(len(origs)-1):
+		sems[i] = set()
 
-		if line.startswith('"') and (stop := line.find('"', 1)) != -1:
-			tag = line[0:stop+1]
-			line = line[stop+1:]
-		elif (stop := line.find(' ')) != -1:
-			tag = line[0:stop]
-			line = line[stop:]
-		else:
-			tag = line
-			line = ''
+	for i in range(len(origs)-1):
+		cur = ''
 
-		m = None
-		if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', tag)) or re.match(r'^\p{Lu}\p{Lu}+$', tag):
-			if not m:
-				m = re.search(r' Der/([nv])[nv]', line)
-			if not m:
-				m = re.search(r' i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)', line)
-			if not m:
-				m = ['', '']
-			pos = m[1][0:1].upper() + m[1][1:]
-			ana = cur + pos
+		for j in range(i, len(origs)-1):
+			cur += cleans[j] + ' '
+
+			m = ['', '']
+			if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)(.*)$', cleans[j+1])) or (m := re.search(r' Der/([nv])[nv]( |$)', cleans[j+1])):
+				pass
+			wc = m[1][0:1].upper() + m[1][1:]
+			flex = m[2]
+			ana = cur + wc
 
 			anas = []
-			if (m := re.match(r'^((?: i?\d?\p{Lu}\p{Ll}[^/\s]*)+)', line)):
+			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
 				anas.append(ana + re.sub(r' i', r' ', m[1]))
-			if pos != 'V':
+			if wc != 'V':
+				anas.append(ana)
 				anas.append(ana + ' Abs Sg')
 				anas.append(ana + ' Ins Sg')
 				anas.append(ana + ' Abs Pl')
@@ -86,77 +81,28 @@ for line in sys.stdin:
 
 			if ids:
 				db.execute("SELECT DISTINCT lex_semclass, lex_sem2 FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
-				new_outs = []
-				while sem := db.fetchone():
-					for out in outs:
-						code = ''
-						if sem[0] != 'UNK' and sem[1] != 'UNK':
-							code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
-						else:
-							code = f'Sem/{sem_map[sem[0]]}'
-						new_outs.append(out + code + ' ')
-
-				if new_outs:
-					outs = sorted(set(new_outs))
-
-			cur += tag + ' ';
-		elif tag.startswith('"') or re.match(r'^Der/', tag) or re.match(r'^Gram/[HIT]V$', tag) or re.match(r'^i?Sem/', tag):
-			cur += tag + ' ';
-
-		for i in range(len(outs)):
-			outs[i] += tag + ' '
-
-
-	# Attach semantics to morphemes that don't currently have
-	sems = set()
-	for out in outs:
-		ms = None
-		if not (ms := re.findall(r' (\p{Lu}\p{Lu}+ Der/.*?)(?= (?:(?:\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) )', out)):
-			continue
-
-		for ana in ms:
-			if ' Sem/' in ana:
-				continue
-			pos = re.search(r' Der/[nv]([nv])', ana)[1].capitalize()
-			ana = ana + ' ' + pos
-			lit_ana = ana
-			anas = []
-			anas.append(ana)
-			anas.append(re.sub(r' Gram/[HIT]V', r'', ana))
-
-			ids = []
-			for ana in anas:
-				did = False
-				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw WHERE substr(fst_ana,1,16) = ?", [ana[0:16]])
-				while r := db.fetchone():
-					if r[0] == ana:
-						ids.append(str(r[1]))
-						did = True
-				if did:
-					break
-
-			if ids:
-				db.execute("SELECT DISTINCT lex_id, lex_semclass, lex_sem2 FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
 				while sem := db.fetchone():
 					code = ''
-					if sem[1] != 'UNK' and sem[2] != 'UNK':
-						code = f'Sem/{sem_map[sem[1]]} Sem/{sem_map[sem[2]]}'
+					if sem[0] != 'UNK' and sem[1] != 'UNK':
+						code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
 					else:
-						code = f'Sem/{sem_map[sem[1]]}'
-					sems.add(lit_ana + '\ue001' + code)
+						code = f'Sem/{sem_map[sem[0]]}'
+					sems[j].add(code)
 
-	for sem in sems:
-		sem = sem.split('\ue001')
-		sem[0] = re.sub(r' (N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)$', r'', sem[0])
-		sem[0] = re.escape(sem[0]).replace(r'\ ', ' ')
-
-		new_outs = []
+	outs = ['']
+	for i in range(len(origs)-1):
+		news = []
 		for out in outs:
-			new_outs.append(re.sub(r' (' + sem[0] + r')( (?:(?:\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) )', r' \1 ' + sem[1] + r'\2', out))
-		outs = new_outs
+			new = out + ' ' + origs[i]
+			if not sems[i]:
+				news.append(new)
+			for sem in sems[i]:
+				news.append(new + ' ' + sem)
+		outs = news
 
-
-	for out in outs:
+	for out in sorted(set(outs)):
+		out += ' ' + origs[-1]
+		out = out.strip()
 		# Mark semantics before derivation as internal
 		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', out)) != out:
 			out = o
