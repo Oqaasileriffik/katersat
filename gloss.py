@@ -103,6 +103,9 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Sg 3SgO')
 				anas.append(ana + ' Ind 3Pl 3PlO')
 
+			pfx = re.search(r' (Prefix/[TA]A) ', ana)
+			prefix = ''
+
 			# Finding matching analyses as its own step is 3 orders of magnitude faster
 			ids = []
 			for ana in anas:
@@ -126,6 +129,18 @@ for line in sys.stdin:
 					if did:
 						break
 
+				# If there is a prefix, try without it
+				if pfx:
+					ana = ana.replace(pfx[0], ' ')
+					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
+					while r := db.fetchone():
+						if r[0] == ana:
+							ids.append(str(r[1]))
+							did = True
+							prefix = pfx[1]
+					if did:
+						break
+
 			if ids:
 				lm = re.sub(r' \S+?/\S+', r'', lm)
 				lm = re.escape(lm).replace(r'\ ', ' ')
@@ -146,6 +161,8 @@ for line in sys.stdin:
 					wc = wc_map_k[tr[3].capitalize()]
 
 					sem = ''
+					if prefix:
+						sem = ' ' + prefix
 					if tr[1] in sem_map_k:
 						sem += ' Sem/'  + sem_map_k[tr[1]]
 					if tr[2] in sem_map_k:
