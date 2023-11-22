@@ -44,11 +44,12 @@ for line in sys.stdin:
 		continue
 	stats['miss'] += 1
 
-	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+))(?: |$))', line)
+	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+)|U)(?: |$))', line)
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
 		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', orig)
+		orig = re.sub(r' (ADV|CONJ)-L', r' L', orig)
 		orig = orig.replace(' gram/', ' Gram/')
 		cleans.append(orig)
 
