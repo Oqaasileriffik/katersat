@@ -102,6 +102,8 @@ for line in sys.stdin:
 			if re.search(r'^.* Gram/TV', ana):
 				anas.append(ana + ' Ind 3Sg 3SgO')
 				anas.append(ana + ' Ind 3Pl 3PlO')
+				anas.append(ana + ' Ind 3Sg 3PlO')
+				anas.append(ana + ' Ind 3Pl 3SgO')
 
 			pfx = re.search(r' (Prefix/[TA]A) ', ana)
 			prefix = ''

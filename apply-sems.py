@@ -68,6 +68,8 @@ for line in sys.stdin:
 			if re.search(r'^.* Gram/TV', ana):
 				anas.append(ana + ' Ind 3Sg 3SgO')
 				anas.append(ana + ' Ind 3Pl 3PlO')
+				anas.append(ana + ' Ind 3Sg 3PlO')
+				anas.append(ana + ' Ind 3Pl 3SgO')
 
 			# Finding matching analyses as its own step is 3 orders of magnitude faster
 			ids = []
