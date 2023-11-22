@@ -44,9 +44,11 @@ for line in sys.stdin:
 		for j in range(i, len(origs)-1):
 			cur += cleans[j] + ' '
 
-			m = ['', '']
+			m = None
 			if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)(.*)$', cleans[j+1])) or (m := re.search(r' Der/([nv])[nv]( |$)', cleans[j+1])):
 				pass
+			if not m:
+				m = ['', '', '']
 			wc = m[1][0:1].upper() + m[1][1:]
 			flex = m[2]
 			ana = cur + wc
