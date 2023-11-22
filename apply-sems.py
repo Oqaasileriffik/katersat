@@ -30,7 +30,7 @@ for line in sys.stdin:
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
-		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb)/(\S+)', r'', orig)
+		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', orig)
 		orig = orig.replace(' gram/', ' Gram/')
 		cleans.append(orig)
 
