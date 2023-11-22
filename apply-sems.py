@@ -17,6 +17,12 @@ while row := db.fetchone():
 	if row[0][0:2] == 'V.' and (m := re.match(r'^:([^\s,]+)', row[1])) != None:
 		sem_map[row[0]] = m[1]
 
+stats = {
+	'hit': 0,
+	'miss': 0,
+	'clear': 0,
+}
+cache = {}
 
 for line in sys.stdin:
 	line = line.rstrip()
@@ -24,9 +30,21 @@ for line in sys.stdin:
 	if not line.startswith('\t"') or not re.search(r' (?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)', line):
 		print(line)
 		sys.stdout.flush()
+		if len(cache) >= 20000:
+			stats['clear'] += 1
+			cache = {}
 		continue
 
-	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+))(?: |$))', line.strip())
+	line = line.strip()
+	if line in cache:
+		stats['hit'] += 1
+		for out in cache[line]:
+			print('\t' + out)
+		sys.stdout.flush()
+		continue
+	stats['miss'] += 1
+
+	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+))(?: |$))', line)
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
@@ -75,7 +93,7 @@ for line in sys.stdin:
 			ids = []
 			for ana in anas:
 				did = False
-				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
+				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
 				while r := db.fetchone():
 					if r[0] == ana:
 						ids.append(str(r[1]))
@@ -104,11 +122,18 @@ for line in sys.stdin:
 				news.append(new + ' ' + sem)
 		outs = news
 
+	news = []
 	for out in sorted(set(outs)):
 		out += ' ' + origs[-1]
 		out = out.strip()
 		# Mark semantics before derivation as internal
 		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', out)) != out:
 			out = o
+		news.append(out)
+
+	cache[line] = news
+	for out in news:
 		print('\t' + out)
 	sys.stdout.flush()
+
+#print(stats, file=sys.stderr)
