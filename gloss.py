@@ -59,9 +59,22 @@ for line in sys.stdin:
 		continue
 
 	line = line.strip()
+
+	if dep := re.search(r'( #\d+->\d+)( |$)', line):
+		dep = dep[1]
+		line = line.replace(dep, '')
+	else:
+		dep = ''
+
+	if func := re.search(r'((?: @\S+)+)( |$)', line):
+		func = func[1]
+		line = line.replace(func, '')
+	else:
+		func = ''
+
 	if line in cache:
 		stats['hit'] += 1
-		print('\t' + cache[line])
+		print('\t' + cache[line] + func + dep)
 		sys.stdout.flush()
 		continue
 	stats['miss'] += 1
@@ -89,18 +102,18 @@ for line in sys.stdin:
 			if not m:
 				m = ['', '', '']
 			wc = m[1][0:1].upper() + m[1][1:]
-			flex = m[2]
+			flex = m[2].strip()
 			ana = (cur + ' ' + wc).strip()
-			#print(f'{i} {j-1}: {cur} | {wc}')
+			#print(f'{i} {j-1}: {cur} | {wc} | {flex}')
 
 			anas = []
 			# Raw match for morpheme sequences
 			anas.append(ana)
 			# First try actual case/flexion
-			if (m := re.match(r'^((?: i?\d?\p{Lu}\p{Ll}[^/\s]*)+)', flex)):
-				flex = re.sub(r' i', r'', m[1])
-				anas.append(ana + flex)
-				anas.append(ana + re.sub(r' (Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)', r' Abs', flex))
+			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]* *)+)', flex)):
+				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
+				anas.append(f'{ana} {flex}'.strip())
+				anas.append((ana + ' ' + re.sub(r' (Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)', r' Abs', flex)).strip())
 			# Then fall back to baseforms
 			if wc != 'V':
 				anas.append(ana + ' Abs Sg')
@@ -115,6 +128,8 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Pl 3PlO')
 				anas.append(ana + ' Ind 3Sg 3PlO')
 				anas.append(ana + ' Ind 3Pl 3SgO')
+
+			#print(f'{i} {j-1}: {cur} | {anas}')
 
 			pfx = re.search(r' (Prefix/[TA]A) ', ana)
 			prefix = ''
@@ -198,7 +213,7 @@ for line in sys.stdin:
 		orig = o
 
 	cache[line] = orig
-	print(f'\t{orig}')
+	print(f'\t{orig}{func}{dep}')
 	sys.stdout.flush()
 
 #print(stats, file=sys.stderr)
