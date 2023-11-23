@@ -15,6 +15,10 @@ def sha1_file(fn):
 dir = os.path.dirname(__file__)
 os.chdir(dir)
 
+if os.path.exists('katersat.sqlite') and os.path.getmtime(__file__) > os.path.getmtime('katersat.sqlite'):
+	print('Forcing Katersat update')
+	subprocess.run(['rm', '-f', 'katersat.sqlite'])
+
 if not os.path.exists('katersat.sqlite') or not os.path.getsize('katersat.sqlite'):
 	subprocess.run(['rm', '-f', 'data.sql', 'etag.txt', 'headers.txt'])
 
