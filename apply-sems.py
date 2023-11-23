@@ -3,6 +3,11 @@ import sys
 import regex as re
 import os
 import sqlite3
+import argparse
+
+parser = argparse.ArgumentParser(prog='apply-sems.py', description='Applies semantic tags from Katersat to a stream of CG-formatted text')
+parser.add_argument('-t', '--trace', action='store_true')
+args = parser.parse_args()
 
 dir = os.path.dirname(__file__)
 con = sqlite3.connect('file:' + dir + '/katersat.sqlite?mode=ro', uri=True, isolation_level=None, check_same_thread=False)
@@ -103,13 +108,15 @@ for line in sys.stdin:
 					break
 
 			if ids:
-				db.execute("SELECT DISTINCT lex_semclass, lex_sem2 FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
+				db.execute("SELECT DISTINCT lex_semclass, lex_sem2, lex_id FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
 				while sem := db.fetchone():
 					code = ''
 					if sem[0] != 'UNK' and sem[1] != 'UNK':
 						code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
 					else:
 						code = f'Sem/{sem_map[sem[0]]}'
+					if args.trace:
+						code = f'{code} SEM-LEX:{sem[2]}'.strip()
 					sems[j].add(code)
 
 	outs = ['']

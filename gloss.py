@@ -3,9 +3,12 @@ import sys
 import regex as re
 import os
 import sqlite3
+import argparse
 
-# Default to English, but allow for other languages
-lang = sys.argv[1] if len(sys.argv) >= 2 else 'eng'
+parser = argparse.ArgumentParser(prog='gloss.py', description='Applies foreign language glosses from Katersat to a stream of CG-formatted text')
+parser.add_argument('-t', '--trace', action='store_true')
+parser.add_argument('lang', nargs='?', default='eng')
+args = parser.parse_args()
 
 # Some word classes are different in Katersat
 wc_map_s = {
@@ -167,12 +170,12 @@ for line in sys.stdin:
 							prefix = pfx[1]
 
 				if ids:
-					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, lang])
+					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, tr.lex_id as lex_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, args.lang])
 					tr = db.fetchone()
 
 					# If there were no semantics and we did not find a match, try any semantics
 					if not tr and s1 == 'UNK':
-						db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [lang])
+						db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, tr.lex_id as lex_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [args.lang])
 						tr = db.fetchone()
 
 					if tr:
@@ -187,7 +190,10 @@ for line in sys.stdin:
 							sem += ' Sem/'  + sem_map_k[tr[2]]
 
 						#print(f'{i} {j-1}: {tr}')
-						origs[i] = f'"{tr[0]}"{sem} {wc} <tr>'
+						out = f'"{tr[0]}"{sem} {wc}'
+						if args.trace:
+							out += f' TR-LEX:{tr[4]}'
+						origs[i] = f'{out} <tr>'
 						k = i+1
 						while k < j:
 							origs[k] = ''
