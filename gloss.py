@@ -90,8 +90,8 @@ for line in sys.stdin:
 				m = ['', '', '']
 			wc = m[1][0:1].upper() + m[1][1:]
 			flex = m[2]
-			ana = cur + ' ' + wc
-			#print(f'{i} {j-1}: {ana}')
+			ana = (cur + ' ' + wc).strip()
+			#print(f'{i} {j-1}: {cur} | {wc}')
 
 			anas = []
 			# Raw match for morpheme sequences
