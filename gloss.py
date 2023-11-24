@@ -116,7 +116,7 @@ for line in sys.stdin:
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]* *)+)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
 				anas.append(f'{ana} {flex}'.strip())
-				anas.append((ana + ' ' + re.sub(r' (Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)', r' Abs', flex)).strip())
+				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
 			# Then fall back to baseforms
 			if wc != 'V':
 				anas.append(ana + ' Abs Sg')

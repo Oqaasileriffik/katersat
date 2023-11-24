@@ -79,7 +79,9 @@ for line in sys.stdin:
 
 			anas = []
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
-				anas.append(ana + re.sub(r' i', r' ', m[1]))
+				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
+				anas.append(f'{ana} {flex}'.strip())
+				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
 			if wc != 'V':
 				anas.append(ana)
 				anas.append(ana + ' Abs Sg')
