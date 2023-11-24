@@ -132,17 +132,17 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Sg 3PlO')
 				anas.append(ana + ' Ind 3Pl 3SgO')
 
-			#print(f'{i} {j-1}: {cur} | {anas}')
-
 			pfx = re.search(r' (Prefix/[TA]A) ', ana)
 			prefix = ''
 
 			s1 = 'UNK'
 			s2 = 'UNK'
-			if (m := re.search(r' i?Sem/(\S+) i?Sem/(\S+)$', origs[j-1])) and (m[1] in sem_map_s) and (m[2] in sem_map_s):
+			if (m := re.search(r'\bi?Sem/(\S+) i?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s) and (m[2] in sem_map_s):
 				s1, s2 = sem_map_s[m[1]], sem_map_s[m[2]]
-			elif (m := re.search(r' i?Sem/(\S+)$', origs[j-1])) and (m[1] in sem_map_s):
+			elif (m := re.search(r'\bi?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s):
 				s1 = sem_map_s[m[1]]
+
+			#print(f'{i} {j-1}: {cur} | {anas} | {s1} {s2}')
 
 			did = False
 			for ana in anas:
@@ -170,12 +170,12 @@ for line in sys.stdin:
 							prefix = pfx[1]
 
 				if ids:
-					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, tr.lex_id as lex_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, args.lang])
+					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, kl.lex_id as k_id, tr.lex_id as t_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, args.lang])
 					tr = db.fetchone()
 
 					# If there were no semantics and we did not find a match, try any semantics
 					if not tr and s1 == 'UNK':
-						db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, tr.lex_id as lex_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [args.lang])
+						db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, kl.lex_id as k_id, tr.lex_id as t_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [args.lang])
 						tr = db.fetchone()
 
 					if tr:
@@ -192,7 +192,7 @@ for line in sys.stdin:
 						#print(f'{i} {j-1}: {tr}')
 						out = f'"{tr[0]}"{sem} {wc}'
 						if args.trace:
-							out += f' TR-LEX:{tr[4]}'
+							out += f' TR-LEX:{tr[4]}:{tr[5]}'
 						origs[i] = f'{out} <tr>'
 						k = i+1
 						while k < j:
