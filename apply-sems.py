@@ -49,6 +49,9 @@ for line in sys.stdin:
 		continue
 	stats['miss'] += 1
 
+	if ' Hyb/' in line and not ' Hyb/1-' in line:
+		line = re.sub(r'^"(.+?)" ', r'"_" \1 ', line)
+
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+)|U)(?: |$))', line)
 	cleans = []
 	for orig in origs:
@@ -75,15 +78,16 @@ for line in sys.stdin:
 				m = ['', '', '']
 			wc = m[1][0:1].upper() + m[1][1:]
 			flex = m[2]
-			ana = cur + wc
+			ana = cur.strip() + ' ' + wc
 
 			anas = []
+			# Raw match for morpheme sequences
+			anas.append(ana)
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
 				anas.append(f'{ana} {flex}'.strip())
 				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
 			if wc != 'V':
-				anas.append(ana)
 				anas.append(ana + ' Abs Sg')
 				anas.append(ana + ' Ins Sg')
 				anas.append(ana + ' Abs Pl')
@@ -96,6 +100,8 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Pl 3PlO')
 				anas.append(ana + ' Ind 3Sg 3PlO')
 				anas.append(ana + ' Ind 3Pl 3SgO')
+
+			#print(f'{i} {j}: {cur} | {anas}')
 
 			# Finding matching analyses as its own step is 3 orders of magnitude faster
 			ids = []
@@ -139,6 +145,8 @@ for line in sys.stdin:
 		# Mark semantics before derivation as internal
 		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', out)) != out:
 			out = o
+		if ' Hyb/' in line and not ' Hyb/1-' in line:
+			out = re.sub(r'^"_" (\p{Lu}\p{Lu}+) ', r'"\1" ', out)
 		news.append(out)
 
 	cache[line] = news
