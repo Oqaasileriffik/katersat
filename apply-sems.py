@@ -52,7 +52,7 @@ for line in sys.stdin:
 	if ' Hyb/' in line and not ' Hyb/1-' in line:
 		line = re.sub(r'^"(.+?)" ', r'"_" \1 ', line)
 
-	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+)|U)(?: |$))', line)
+	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
@@ -143,10 +143,10 @@ for line in sys.stdin:
 		out += ' ' + origs[-1]
 		out = out.strip()
 		# Mark semantics before derivation as internal
-		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}\p{Lu}+ )', r' i\1', out)) != out:
+		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}[_\p{Lu}]+ )', r' i\1', out)) != out:
 			out = o
 		if ' Hyb/' in line and not ' Hyb/1-' in line:
-			out = re.sub(r'^"_" (\p{Lu}\p{Lu}+) ', r'"\1" ', out)
+			out = re.sub(r'^"_" (\p{Lu}[_\p{Lu}]+) ', r'"\1" ', out)
 		news.append(out)
 
 	cache[line] = news

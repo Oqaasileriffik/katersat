@@ -85,7 +85,7 @@ for line in sys.stdin:
 	if ' Hyb/' in line and not ' Hyb/1-' in line:
 		line = re.sub(r'^"(.+?)" ', r'"_" \1 ', line)
 
-	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}\p{Lu}+)|U)(?: |$))', line)
+	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
@@ -222,7 +222,7 @@ for line in sys.stdin:
 	orig = re.sub(r'  +', r' ', ' '.join(origs))
 
 	# Mark semantics before derivation as internal
-	while (o := re.sub(r' (Sem/\S+.*? (?:U|\p{Lu}\p{Lu}+) )', r' i\1', orig)) != orig:
+	while (o := re.sub(r' (Sem/\S+.*? (?:U|\p{Lu}[_\p{Lu}]+) )', r' i\1', orig)) != orig:
 		orig = o
 
 	# Mark word classes before derivation or other word classes as internal
@@ -230,7 +230,7 @@ for line in sys.stdin:
 		orig = o
 
 	if ' Hyb/' in line and not ' Hyb/1-' in line:
-		orig = re.sub(r'^"_" (\p{Lu}\p{Lu}+) ', r'"\1" ', orig)
+		orig = re.sub(r'^"_" (\p{Lu}[_\p{Lu}]+) ', r'"\1" ', orig)
 		orig = re.sub(r'^"_" "', r'"', orig)
 
 	cache[line] = orig
