@@ -113,7 +113,7 @@ for line in sys.stdin:
 			# Raw match for morpheme sequences
 			anas.append(ana)
 			# First try actual case/flexion
-			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]* *)+)', flex)):
+			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]* *)+)', flex)) or (m := re.match(r'^(LU)(?: |$)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
 				anas.append(f'{ana} {flex}'.strip())
 				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
@@ -123,10 +123,10 @@ for line in sys.stdin:
 				anas.append(ana + ' Ins Sg')
 				anas.append(ana + ' Abs Pl')
 				anas.append(ana + ' Ins Pl')
-			if re.search(r'^.* Gram/IV', ana):
+			if re.search(r'^.* Gram/[HI]V', ana):
 				anas.append(ana + ' Ind 3Sg')
 				anas.append(ana + ' Ind 3Pl')
-			if re.search(r'^.* Gram/TV', ana):
+			if re.search(r'^.* Gram/[HT]V', ana):
 				anas.append(ana + ' Ind 3Sg 3SgO')
 				anas.append(ana + ' Ind 3Pl 3PlO')
 				anas.append(ana + ' Ind 3Sg 3PlO')
@@ -168,6 +168,14 @@ for line in sys.stdin:
 						if r[0] == ana:
 							ids.append(str(r[1]))
 							prefix = pfx[1]
+
+				# N may also be Pron
+				if not ids and ' N ' in ana and not ' Pron ' in ana:
+					ana = ana.replace(' N ', ' Pron ')
+					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
+					while r := db.fetchone():
+						if r[0] == ana:
+							ids.append(str(r[1]))
 
 				if ids:
 					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, kl.lex_id as k_id, tr.lex_id as t_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, args.lang])
