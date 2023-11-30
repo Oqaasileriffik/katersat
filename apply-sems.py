@@ -49,8 +49,7 @@ for line in sys.stdin:
 		continue
 	stats['miss'] += 1
 
-	if ' Hyb/' in line and not ' Hyb/1-' in line:
-		line = re.sub(r'^"(.+?)" ', r'"_" \1 ', line)
+	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
@@ -101,6 +100,8 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Sg 3PlO')
 				anas.append(ana + ' Ind 3Pl 3SgO')
 
+			if hyb:
+				anas.extend([re.sub(r'^"(\p{Lu}+)" ', r'\1 ', x) for x in anas])
 			#print(f'{i} {j}: {cur} | {anas}')
 
 			# Finding matching analyses as its own step is 3 orders of magnitude faster
@@ -114,6 +115,17 @@ for line in sys.stdin:
 						did = True
 				if did:
 					break
+
+				# Allow looking up morphemes without Gram/[HIT]V
+				if not ana.startswith('"'):
+					ana = re.sub(r' Gram/[HIT]V ', r' ', ana)
+					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
+					while r := db.fetchone():
+						if r[0] == ana:
+							ids.append(str(r[1]))
+							did = True
+					if did:
+						break
 
 			if ids:
 				db.execute("SELECT DISTINCT lex_semclass, lex_sem2, lex_id FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
@@ -145,8 +157,6 @@ for line in sys.stdin:
 		# Mark semantics before derivation as internal
 		while (o := re.sub(r' (Sem/\S+.*? \p{Lu}[_\p{Lu}]+ )', r' i\1', out)) != out:
 			out = o
-		if ' Hyb/' in line and not ' Hyb/1-' in line:
-			out = re.sub(r'^"_" (\p{Lu}[_\p{Lu}]+) ', r'"\1" ', out)
 		news.append(out)
 
 	cache[line] = news

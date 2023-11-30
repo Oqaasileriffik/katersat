@@ -82,8 +82,7 @@ for line in sys.stdin:
 		continue
 	stats['miss'] += 1
 
-	if ' Hyb/' in line and not ' Hyb/1-' in line:
-		line = re.sub(r'^"(.+?)" ', r'"_" \1 ', line)
+	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
@@ -134,6 +133,9 @@ for line in sys.stdin:
 				anas.append(ana + ' Ind 3Pl 3PlO')
 				anas.append(ana + ' Ind 3Sg 3PlO')
 				anas.append(ana + ' Ind 3Pl 3SgO')
+
+			if hyb:
+				anas.extend([re.sub(r'^"(\p{Lu}+)" ', r'\1 ', x) for x in anas])
 
 			pfx = re.search(r' (Prefix/[TA]A) ', ana)
 			prefix = ''
@@ -228,10 +230,6 @@ for line in sys.stdin:
 	# Mark word classes before derivation or other word classes as internal
 	while (o := re.sub(r' ((?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol) .*? (?:(?:U|\p{Lu}\p{Lu}+)|(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)) )', r' i\1', orig)) != orig:
 		orig = o
-
-	if ' Hyb/' in line and not ' Hyb/1-' in line:
-		orig = re.sub(r'^"_" (\p{Lu}[_\p{Lu}]+) ', r'"\1" ', orig)
-		orig = re.sub(r'^"_" "', r'"', orig)
 
 	cache[line] = orig
 	print(f'\t{orig}{func}{dep}')
