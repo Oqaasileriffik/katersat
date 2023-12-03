@@ -7,6 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser(prog='gloss.py', description='Applies foreign language glosses from Katersat to a stream of CG-formatted text')
 parser.add_argument('-t', '--trace', action='store_true')
+parser.add_argument('-l', '--lang', action='store_true', default='eng')
 parser.add_argument('lang', nargs='?', default='eng')
 args = parser.parse_args()
 
@@ -75,9 +76,15 @@ for line in sys.stdin:
 	else:
 		func = ''
 
+	if rnum := re.search(r'( ¤\S+)( |$)', line):
+		rnum = rnum[1]
+		line = line.replace(rnum, '')
+	else:
+		rnum = ''
+
 	if line in cache:
 		stats['hit'] += 1
-		print('\t' + cache[line] + func + dep)
+		print('\t' + cache[line] + rnum + func + dep)
 		sys.stdout.flush()
 		continue
 	stats['miss'] += 1
@@ -232,7 +239,7 @@ for line in sys.stdin:
 		orig = o
 
 	cache[line] = orig
-	print(f'\t{orig}{func}{dep}')
+	print(f'\t{orig}{rnum}{func}{dep}')
 	sys.stdout.flush()
 
 #print(stats, file=sys.stderr)
