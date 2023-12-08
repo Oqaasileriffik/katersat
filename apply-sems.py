@@ -64,11 +64,17 @@ for line in sys.stdin:
 	for i in range(len(origs)-1):
 		sems[i] = set()
 
+	longest = False
+
 	for i in range(len(origs)-1):
 		cur = ''
 
 		for j in range(i, len(origs)-1):
 			cur += cleans[j] + ' '
+
+			# If we are at the last morpheme and there already is a longest match, stop
+			if j == len(origs)-2 and longest:
+				break
 
 			m = None
 			if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)(.*)$', cleans[j+1])) or (m := re.search(r' Der/([nv])[nv]( |$)', cleans[j+1])):
@@ -138,6 +144,9 @@ for line in sys.stdin:
 					if args.trace:
 						code = f'{code} SEM-LEX:{sem[2]}'.strip()
 					sems[j].add(code)
+
+					if i == 0 and j == len(origs)-2:
+						longest = True
 
 	outs = ['']
 	for i in range(len(origs)-1):
