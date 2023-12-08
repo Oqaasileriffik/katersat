@@ -94,7 +94,7 @@ for line in sys.stdin:
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
 	for orig in origs:
-		orig = re.sub(r' Gram/([HIT]V)( |$)', r' gram/\1\2', orig)
+		orig = re.sub(r' Gram/((?:[HIT]V)|(?:Refl))\b', r' gram/\1', orig)
 		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', orig)
 		orig = re.sub(r' (ADV|CONJ)-L', r' L', orig)
 		orig = re.sub(r' i?Sem/(\S+)', r'', orig)
