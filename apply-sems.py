@@ -6,6 +6,7 @@ import sqlite3
 import argparse
 
 parser = argparse.ArgumentParser(prog='apply-sems.py', description='Applies semantic tags from Katersat to a stream of CG-formatted text')
+parser.add_argument('-l', '--last', action='store_true')
 parser.add_argument('-t', '--trace', action='store_true')
 args = parser.parse_args()
 
@@ -65,12 +66,17 @@ for line in sys.stdin:
 		sems[i] = set()
 
 	longest = False
+	max_j = 0
 
 	for i in range(len(origs)-1):
 		cur = ''
 
 		for j in range(i, len(origs)-1):
 			cur += cleans[j] + ' '
+
+			# If we are looking for longest matches from baseform, don't apply them if there is further derivation
+			if i == 0 and j != 0 and j < len(origs)-2:
+				continue
 
 			# If we are at the last morpheme and there already is a longest match, stop
 			if j == len(origs)-2 and longest:
@@ -144,9 +150,14 @@ for line in sys.stdin:
 					if args.trace:
 						code = f'{code} SEM-LEX:{sem[2]}'.strip()
 					sems[j].add(code)
+					max_j = max(j, max_j)
 
 					if i == 0 and j == len(origs)-2:
 						longest = True
+
+	if args.last:
+		for i in range(max_j):
+			sems[i] = set()
 
 	outs = ['']
 	for i in range(len(origs)-1):
