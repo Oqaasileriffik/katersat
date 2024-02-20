@@ -74,10 +74,6 @@ for line in sys.stdin:
 		for j in range(i, len(origs)-1):
 			cur += cleans[j] + ' '
 
-			# If we are looking for longest matches from baseform, don't apply them if there is further derivation
-			if i == 0 and j != 0 and j < len(origs)-2:
-				continue
-
 			# If we are at the last morpheme and there already is a longest match, stop
 			if j == len(origs)-2 and longest:
 				break
@@ -154,6 +150,12 @@ for line in sys.stdin:
 
 					if i == 0 and j == len(origs)-2:
 						longest = True
+
+				# If we are looking for long matches from baseform, only keep the longest match
+				if i == 0:
+					for k in range(max_j):
+						sems[k] = set()
+
 
 	if args.last:
 		for i in range(max_j):
