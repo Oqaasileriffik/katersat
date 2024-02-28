@@ -153,7 +153,8 @@ for line in sys.stdin:
 
 				# If we are looking for long matches from baseform, only keep the longest match
 				if i == 0:
-					for k in range(max_j):
+					# But, roots should keep their own semantics, as morphemes do, so start at 1
+					for k in range(1, max_j):
 						sems[k] = set()
 
 
