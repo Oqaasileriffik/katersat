@@ -17,10 +17,15 @@ db = con.cursor()
 
 # Fetch map of semantic classes, turning verbal semantic codes into their English equivalent
 sem_map = {}
-db.execute("SELECT sem_code, sem_eng FROM kat_semclasses WHERE sem_code != 'UNK'")
+db.execute("SELECT sem_code, sem_eng FROM kat_semclasses WHERE sem_code != 'UNK' AND sem_code NOT LIKE 'V.%'")
 while row := db.fetchone():
 	sem_map[row[0]] = row[0]
-	if row[0][0:2] == 'V.' and (m := re.match(r'^:([^\s,]+)', row[1])) != None:
+db.execute("SELECT sem_code, sem_eng FROM kat_semclasses WHERE sem_code LIKE 'V.%'")
+while row := db.fetchone():
+	m = re.match(r'^:([^\s,]+)', row[1])
+	if m[1] in sem_map:
+		sem_map[row[0]] = 'v'+m[1]
+	else:
 		sem_map[row[0]] = m[1]
 
 stats = {
