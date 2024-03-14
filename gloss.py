@@ -132,14 +132,15 @@ for line in sys.stdin:
 				anas.append(ana + ' Ins Sg')
 				anas.append(ana + ' Abs Pl')
 				anas.append(ana + ' Ins Pl')
-			if re.search(r'^.* Gram/[HI]V', ana):
-				anas.append(ana + ' Ind 3Sg')
-				anas.append(ana + ' Ind 3Pl')
-			if re.search(r'^.* Gram/[HT]V', ana):
-				anas.append(ana + ' Ind 3Sg 3SgO')
-				anas.append(ana + ' Ind 3Pl 3PlO')
-				anas.append(ana + ' Ind 3Sg 3PlO')
-				anas.append(ana + ' Ind 3Pl 3SgO')
+			else:
+				if re.search(r'^.* Gram/[HI]V', ana) or not re.search(r'^.* Gram/TV', ana):
+					anas.append(ana + ' Ind 3Sg')
+					anas.append(ana + ' Ind 3Pl')
+				if re.search(r'^.* Gram/[HT]V', ana) or not re.search(r'^.* Gram/IV', ana):
+					anas.append(ana + ' Ind 3Sg 3SgO')
+					anas.append(ana + ' Ind 3Pl 3PlO')
+					anas.append(ana + ' Ind 3Sg 3PlO')
+					anas.append(ana + ' Ind 3Pl 3SgO')
 
 			if hyb:
 				anas.extend([re.sub(r'^"(\p{Lu}+)" ', r'\1 ', x) for x in anas])
