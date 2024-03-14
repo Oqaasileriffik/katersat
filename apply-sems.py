@@ -96,9 +96,10 @@ for line in sys.stdin:
 			# Raw match for morpheme sequences
 			anas.append(ana)
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
-				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
-				anas.append(f'{ana} {flex}'.strip())
-				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
+				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1]).split(' ')
+				for fi in range(len(flex), 0, -1):
+					anas.append((f'{ana} %s' % ' '.join(flex[0:fi])).strip())
+					anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', ' '.join(flex[0:fi]))).strip())
 			if wc != 'V':
 				anas.append(ana + ' Abs Sg')
 				anas.append(ana + ' Ins Sg')
