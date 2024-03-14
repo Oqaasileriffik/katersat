@@ -138,7 +138,7 @@ for line in sys.stdin:
 				anas.append(ana + ' Abs Pl')
 				anas.append(ana + ' Ins Pl')
 			else:
-				if re.search(r'^.* Gram/[HI]V', ana) or not re.search(r'^.* Gram/TV', ana):
+				if re.search(r'^.* Gram/[HI]V', ana) or re.search(r'^.* Gram/Refl', ana) or not re.search(r'^.* Gram/TV', ana):
 					anas.append(ana + ' Ind 3Sg')
 					anas.append(ana + ' Ind 3Pl')
 				if re.search(r'^.* Gram/[HT]V', ana) or not re.search(r'^.* Gram/IV', ana):

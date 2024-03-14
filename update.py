@@ -66,6 +66,9 @@ for row in rows:
 			print(f'Warning: Lexeme {id} invalid analysis {stem}')
 			continue
 		stem = f'"{m[1]}" ' + m[2].replace('+', ' ')
+		stem = re.sub(r' Gram/((?:[HIT]V)|(?:Refl))\b', r' gram/\1', stem)
+		stem = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', stem)
+		stem = stem.replace(' gram/', ' Gram/')
 		db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
 
 con.commit()
