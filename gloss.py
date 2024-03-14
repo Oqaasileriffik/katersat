@@ -190,10 +190,20 @@ for line in sys.stdin:
 				# N may also be Pron
 				if not ids and ' N ' in ana and not ' Pron ' in ana:
 					ana = ana.replace(' N ', ' Pron ')
-					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
-					while r := db.fetchone():
-						if r[0] == ana:
-							ids.append(str(r[1]))
+					anas2 = [ana]
+					for sgpl in ['Sg', 'Pl']:
+						for num in ['', '1', '2', '3', '4']:
+							anas2.append(ana.replace(' Sg', f' {num}{sgpl}'))
+							anas2.append(ana.replace(' Pl', f' {num}{sgpl}'))
+							anas2.append(ana.replace(f' {num}Sg', f' {num}{sgpl}'))
+							anas2.append(ana.replace(f' {num}Pl', f' {num}{sgpl}'))
+					for ana in anas2:
+						db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib'", [ana[0:16]])
+						while r := db.fetchone():
+							if r[0] == ana:
+								ids.append(str(r[1]))
+						if ids:
+							break
 
 				if ids:
 					db.execute("SELECT DISTINCT tr.lex_lexeme, tr.lex_semclass as sem, tr.lex_sem2 as sem2, tr.lex_wordclass as wc, kl.lex_id as k_id, tr.lex_id as t_id FROM kat_lexemes as kl NATURAL JOIN glue_lexeme_synonyms AS gls INNER JOIN kat_lexemes as tr ON (gls.lex_syn = tr.lex_id) WHERE kl.lex_id IN (" + ','.join(ids) + ") AND kl.lex_semclass = ? AND kl.lex_sem2 = ? AND tr.lex_language = ? ORDER BY kl.lex_id ASC, gls.syn_order ASC, tr.lex_id ASC LIMIT 1", [s1, s2, args.lang])
