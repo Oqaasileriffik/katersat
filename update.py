@@ -51,7 +51,7 @@ print('Converting longest match...')
 con = sqlite3.connect('katersat.sqlite')
 db = con.cursor()
 
-db.execute("SELECT DISTINCT lex_id, lex_lexeme, lex_stem FROM (SELECT lex_id, lex_lexeme, lex_stem FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme NOT LIKE '% %' UNION SELECT lex_id, lex_lexeme, lex_stem FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme LIKE '% Der/%')")
+db.execute("SELECT DISTINCT * FROM (SELECT lex_id, lex_lexeme, lex_stem, lex_valence FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme NOT LIKE '% %' UNION SELECT lex_id, lex_lexeme, lex_stem, lex_valence FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme LIKE '% Der/%')")
 rows = db.fetchall()
 for row in rows:
 	id = row[0]
@@ -70,6 +70,15 @@ for row in rows:
 		stem = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', stem)
 		stem = stem.replace(' gram/', ' Gram/')
 		db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
+		if 'Gram/' not in stem:
+			if row[3] == 1:
+				#print(f'Adding Gram/IV to {stem}')
+				stem = stem.replace('" ', '" Gram/IV ')
+				db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
+			if row[3] == 2:
+				#print(f'Adding Gram/TV to {stem}')
+				stem = stem.replace('" ', '" Gram/TV ')
+				db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
 
 con.commit()
 
