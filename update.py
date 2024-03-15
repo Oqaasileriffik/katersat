@@ -70,6 +70,10 @@ for row in rows:
 		stem = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', stem)
 		stem = stem.replace(' gram/', ' Gram/')
 		db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
+		if ' Gram/HV Gram/IV ' in stem:
+			#print(f'Reducing Gram/HV Gram/IV in {stem}')
+			stem = stem.replace(' Gram/HV Gram/IV ', ' Gram/HV ')
+			db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
 		if 'Gram/' not in stem:
 			if row[3] == 1:
 				#print(f'Adding Gram/IV to {stem}')
