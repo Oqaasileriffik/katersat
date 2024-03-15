@@ -123,11 +123,11 @@ for line in sys.stdin:
 			ids = []
 			for ana in anas:
 				did = False
-				db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
+				db.execute("SELECT fst_ana, kl.lex_id, COALESCE(let_attrs, 0) FROM kat_long_raw NATURAL JOIN kat_lexemes as kl LEFT JOIN kat_lexeme_attrs as kla ON (kl.lex_id = kla.lex_id) WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
 				while r := db.fetchone():
 					if r[0] == ana:
 						ids.append(str(r[1]))
-						did = True
+						did = ((r[2] & 32) == 0)
 				if did:
 					break
 
