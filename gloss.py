@@ -131,6 +131,9 @@ for line in sys.stdin:
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
 				anas.append(f'{ana} {flex}'.strip())
 				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
+				if re.search(r'\b\d(Sg|Pl)Poss\b', flex):
+					anas.append((ana + ' ' + re.sub(r'\b\d(Sg|Pl)Poss\b', '', flex)).strip())
+					anas.append((ana + ' ' + re.sub(r'\b(?:Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk) (Sg|Pl) \d(Sg|Pl)Poss\b', r'Abs \1', flex)).strip())
 			# Then fall back to baseforms
 			if wc != 'V':
 				anas.append(ana + ' Abs Sg')
