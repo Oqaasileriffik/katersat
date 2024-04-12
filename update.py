@@ -30,7 +30,10 @@ if os.path.exists('data.sql'):
 		sha = sha1_file('data.sql')
 		Path('etag.txt').write_text(sha)
 
-subprocess.run(['curl', '-D', 'headers.txt', '--no-progress-meter', '--compressed', '--etag-compare', 'etag.txt', '--etag-save', 'etag.txt', 'https://tech.oqaasileriffik.gl/katersat/export-katersat.php', '-o', 'data.sql'])
+subprocess.run(['curl', '-D', 'headers.txt', '--no-progress-meter', '--compressed', '--etag-compare', 'etag.txt', '--etag-save', 'etag-new.txt', 'https://tech.oqaasileriffik.gl/katersat/export-katersat.php', '-o', 'data.sql'])
+
+if os.path.getsize('etag-new.txt'):
+	os.rename('etag-new.txt', 'etag.txt')
 
 new=sha
 if os.path.getmtime('etag.txt') <= os.path.getmtime('data.sql'):
@@ -42,13 +45,13 @@ if sha == new:
 
 
 print('Loading new Katersat data...')
-subprocess.run(['rm', '-f', 'katersat.sqlite'])
-subprocess.run(['sqlite3', 'katersat.sqlite', '-init', 'schema.sql'], input='')
-subprocess.run(['sqlite3', 'katersat.sqlite', '-init', 'data.sql'], input='')
+subprocess.run(['rm', '-f', 'katersat.sqlite.new'])
+subprocess.run(['sqlite3', 'katersat.sqlite.new', '-init', 'schema.sql'], input='')
+subprocess.run(['sqlite3', 'katersat.sqlite.new', '-init', 'data.sql'], input='')
 Path('etag.txt').write_text(new)
 print('Converting longest match...')
 
-con = sqlite3.connect('katersat.sqlite')
+con = sqlite3.connect('katersat.sqlite.new')
 db = con.cursor()
 
 db.execute("SELECT DISTINCT * FROM (SELECT lex_id, lex_lexeme, lex_stem, lex_valence FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme NOT LIKE '% %' UNION SELECT lex_id, lex_lexeme, lex_stem, lex_valence FROM kat_lexemes WHERE lex_language = 'kal' AND lex_lexeme LIKE '% Der/%')")
@@ -85,5 +88,7 @@ for row in rows:
 				db.execute("INSERT INTO kat_long_raw VALUES (?, ?)", [stem, id])
 
 con.commit()
+
+os.rename('katersat.sqlite.new', 'katersat.sqlite')
 
 print('Katersat updated')
