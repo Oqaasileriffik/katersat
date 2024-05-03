@@ -98,7 +98,10 @@ for line in sys.stdin:
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1]).split(' ')
 				for fi in range(len(flex), 0, -1):
-					anas.append((f'{ana} %s' % ' '.join(flex[0:fi])).strip())
+					ana2 = (f'{ana} %s' % ' '.join(flex[0:fi])).strip()
+					anas.append(ana2)
+					if re.search(r' \dPl(O)?$', ana2):
+						anas.append(re.sub(r' (\d)Pl(O)?$', r' \1Sg\2', ana2))
 					anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', ' '.join(flex[0:fi]))).strip())
 			if wc != 'V':
 				anas.append(ana + ' Abs Sg')

@@ -129,7 +129,10 @@ for line in sys.stdin:
 			# First try actual case/flexion
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]* *)+)', flex)) or (m := re.match(r'^(LU)(?: |$)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1])
-				anas.append(f'{ana} {flex}'.strip())
+				ana2 = f'{ana} {flex}'.strip()
+				anas.append(ana2)
+				if re.search(r' \dPl(O?)$', ana2):
+					anas.append(re.sub(r' (\d)Pl(O?)$', r' \1Sg\2', ana2))
 				anas.append((ana + ' ' + re.sub(r'\b(Rel|Trm|Abl|Lok|Aeq|Ins|Via|Nom|Akk)\b', r'Abs', flex)).strip())
 				if re.search(r'\b\d(Sg|Pl)Poss\b', flex):
 					anas.append((ana + ' ' + re.sub(r'\b\d(Sg|Pl)Poss\b', '', flex)).strip())
