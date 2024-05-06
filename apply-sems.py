@@ -123,15 +123,26 @@ for line in sys.stdin:
 			#print(f'{i} {j}: {cur} | {anas}')
 
 			# Finding matching analyses as its own step is 3 orders of magnitude faster
-			ids = []
+			ids = {}
 			for ana in anas:
 				did = False
 				db.execute("SELECT fst_ana, kl.lex_id, COALESCE(let_attrs, 0) FROM kat_long_raw NATURAL JOIN kat_lexemes as kl LEFT JOIN kat_lexeme_attrs as kla ON (kl.lex_id = kla.lex_id) WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
 				while r := db.fetchone():
 					if r[0] == ana:
-						ids.append(str(r[1]))
+						ids[str(r[1])] = ''
 						did = ((r[2] & 32) == 0)
 				if did:
+					if ana.startswith('"') and re.search(r' Cont [123](Sg|Pl)O$', ana):
+						c_anas = []
+						for ps in ['1Sg', '2Sg', '3Sg', '1Pl', '2Pl', '3Pl']:
+							for pso in ['3SgO', '3PlO']:
+								c_anas.append(re.sub(r' Cont [123](Sg|Pl)O$', f' Ind {ps} {pso}', ana))
+						for c_ana in c_anas:
+							db.execute("SELECT fst_ana, kl.lex_id, COALESCE(let_attrs, 0) FROM kat_long_raw NATURAL JOIN kat_lexemes as kl LEFT JOIN kat_lexeme_attrs as kla ON (kl.lex_id = kla.lex_id) WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [c_ana[0:16]])
+							while r := db.fetchone():
+								if r[0] == c_ana:
+									m = re.search(r' ([123](?:Sg|Pl)) ([123](?:Sg|Pl)O)$', c_ana)
+									ids[str(r[1])] = f' Heur/Cont/{m[1]} Heur/Cont/{m[2]}'
 					break
 
 				# Allow looking up morphemes without Gram/[HIT]V
@@ -140,21 +151,23 @@ for line in sys.stdin:
 					db.execute("SELECT fst_ana, lex_id FROM kat_long_raw NATURAL JOIN kat_lexemes WHERE substr(fst_ana,1,16) = ? AND lex_semclass != 'meta-cat-lib' AND lex_semclass != 'UNK'", [ana[0:16]])
 					while r := db.fetchone():
 						if r[0] == ana:
-							ids.append(str(r[1]))
+							ids[str(r[1])] = ''
 							did = True
 					if did:
 						break
 
 			if ids:
-				db.execute("SELECT DISTINCT lex_semclass, lex_sem2, lex_id FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids) + ") AND lex_semclass != 'UNK'")
+				db.execute("SELECT DISTINCT lex_semclass, lex_sem2, lex_id FROM kat_lexemes WHERE lex_id IN (" + ','.join(ids.keys()) + ") AND lex_semclass != 'UNK'")
 				while sem := db.fetchone():
 					code = ''
 					if sem[0] != 'UNK' and sem[1] != 'UNK':
 						code = f'Sem/{sem_map[sem[0]]} Sem/{sem_map[sem[1]]}'
 					else:
 						code = f'Sem/{sem_map[sem[0]]}'
+					if ids[str(sem[2])] != '':
+						code += ids[str(sem[2])]
 					if args.trace:
-						code = f'{code} SEM-LEX:{sem[2]}'.strip()
+						code += f' SEM-LEX:{sem[2]}'
 					sems[j].add(code)
 					max_j = max(j, max_j)
 
