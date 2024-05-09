@@ -97,13 +97,16 @@ for line in sys.stdin:
 	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
+	scleans = []
 	cleans = []
 	for orig in origs:
 		orig = re.sub(r' Gram/((?:[HIT]V)|(?:Refl))\b', r' gram/\1', orig)
 		orig = re.sub(r' (Gram|Dial|Orth|O[lL]ang|Heur|Hyb|Err)/(\S+)', r'', orig)
 		orig = re.sub(r' (ADV|CONJ)-L', r' L', orig)
-		orig = re.sub(r' i?Sem/(\S+)', r'', orig)
+		orig = re.sub(r' i?Sem/(Concessive|Temporal)', r'', orig)
 		orig = orig.replace(' gram/', ' Gram/')
+		scleans.append(orig)
+		orig = re.sub(r' i?Sem/(\S+)', r'', orig)
 		cleans.append(orig)
 
 	# Python doesn't have a real for() loop, so...
@@ -111,7 +114,7 @@ for line in sys.stdin:
 	e = len(origs)-1
 	while i < e:
 		for j in range(len(origs)-1, i, -1):
-			cur = ' '.join(cleans[i:j])
+			cur = (' '.join(cleans[i:j-1]) + ' ' + ' '.join(scleans[j-1:j])).strip()
 
 			m = None
 			if (m := re.match(r'^i?(N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol)(?: |$)(.*)$', cleans[j])) or (m := re.search(r' Der/([nv])[nv]( |$)', cleans[j])):
@@ -163,8 +166,16 @@ for line in sys.stdin:
 			s2 = 'UNK'
 			if (m := re.search(r'\bi?Sem/(\S+) i?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s) and (m[2] in sem_map_s):
 				s1, s2 = sem_map_s[m[1]], sem_map_s[m[2]]
+				anas = list(map(lambda x: re.sub(fr' \bi?Sem/{m[1]} i?Sem/{m[2]}\b', '', x), anas))
 			elif (m := re.search(r'\bi?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s):
 				s1 = sem_map_s[m[1]]
+				anas = list(map(lambda x: re.sub(fr' \bi?Sem/{m[1]}\b', '', x), anas))
+			elif (m := re.search(r'\bi?Sem/(?:an|Be|CognitiveMaking|dur|event|Fem|FirstName|Geo|H|HH|Hprof|Hum|Hunt|inst|Location|LastName|Mailadresse|Mask|ModeOfMovement|Remove|sem|temp|Time|Unit|Url|misse) \bi?Sem/(\S+) i?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s) and (m[2] in sem_map_s):
+				s1, s2 = sem_map_s[m[1]], sem_map_s[m[2]]
+				anas = list(map(lambda x: re.sub(fr' \bi?Sem/{m[1]} i?Sem/{m[2]}\b', '', x), anas))
+			elif (m := re.search(r'\bi?Sem/(?:an|Be|CognitiveMaking|dur|event|Fem|FirstName|Geo|H|HH|Hprof|Hum|Hunt|inst|Location|LastName|Mailadresse|Mask|ModeOfMovement|Remove|sem|temp|Time|Unit|Url|misse) \bi?Sem/(\S+)\b', origs[j-1])) and (m[1] in sem_map_s):
+				s1 = sem_map_s[m[1]]
+				anas = list(map(lambda x: re.sub(fr' \bi?Sem/{m[1]}\b', '', x), anas))
 
 			#print(f'{i} {j-1}: {cur} | {anas} | {s1} {s2}')
 
