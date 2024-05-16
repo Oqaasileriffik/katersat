@@ -68,33 +68,31 @@ for line in sys.stdin:
 		continue
 
 	line = line.strip()
+	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
-	if dep := re.search(r'( #\d+->\d+)( |$)', line):
-		dep = dep[1]
-		line = line.replace(dep, '')
-	else:
-		dep = ''
-
-	if func := re.search(r'((?: @\S+)+)( |$)', line):
-		func = func[1]
-		line = line.replace(func, '')
-	else:
-		func = ''
-
-	if rnum := re.search(r'( ¤\S+)( |$)', line):
-		rnum = rnum[1]
-		line = line.replace(rnum, '')
-	else:
-		rnum = ''
+	suffix = ''
+	if m := re.search(r' (?:\d?(?:Sg|Pl|Du)(?:Poss|O)?)( (?:ADV-|CONJ-)?(?:LI|LU|LUUNNIIT)(?: |$).*)$', line):
+		suffix += m[1]
+		line = re.sub(r'( (?:ADV-|CONJ-)?(?:LI|LU|LUUNNIIT)(?: |$).*)$', '', line)
+	if m := re.search(r'( ¤\S+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'((?: %\S+)+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'((?: @\S+)+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'( #\d+->\d+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[0], '')
 
 	if line in cache:
 		stats['hit'] += 1
-		print('\t' + cache[line] + rnum + func + dep)
+		print('\t' + cache[line] + suffix)
 		sys.stdout.flush()
 		continue
 	stats['miss'] += 1
-
-	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	scleans = []
@@ -272,7 +270,7 @@ for line in sys.stdin:
 		orig = o
 
 	cache[line] = orig
-	print(f'\t{orig}{rnum}{func}{dep}')
+	print('\t' + orig + suffix)
 	sys.stdout.flush()
 
 #print(stats, file=sys.stderr)

@@ -47,15 +47,32 @@ for line in sys.stdin:
 		continue
 
 	line = line.strip()
+	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
+
+	suffix = ''
+	if m := re.search(r' (?:\d?(?:Sg|Pl|Du)(?:Poss|O)?)( (?:ADV-|CONJ-)?(?:LI|LU|LUUNNIIT)(?: |$).*)$', line):
+		suffix += m[1]
+		line = re.sub(r'( (?:ADV-|CONJ-)?(?:LI|LU|LUUNNIIT)(?: |$).*)$', '', line)
+	if m := re.search(r'( ¤\S+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'((?: %\S+)+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'((?: @\S+)+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[1], '')
+	if m := re.search(r'( #\d+->\d+)( |$)', line):
+		suffix += m[1]
+		line = line.replace(m[0], '')
+
 	if line in cache:
 		stats['hit'] += 1
 		for out in cache[line]:
-			print('\t' + out)
+			print('\t' + out + suffix)
 		sys.stdout.flush()
 		continue
 	stats['miss'] += 1
-
-	hyb = (' Hyb/' in line and not ' Hyb/1-' in line)
 
 	origs = re.split(r' (?=(?:(?:i?(?:N|V|Pali|Conj|Adv|Interj|Pron|Prop|Num|Symbol))|(?:\p{Lu}[_\p{Lu}]+)|U)(?: |$))', line)
 	cleans = []
@@ -207,7 +224,7 @@ for line in sys.stdin:
 
 	cache[line] = news
 	for out in news:
-		print('\t' + out)
+		print('\t' + out + suffix)
 	sys.stdout.flush()
 
 #print(stats, file=sys.stderr)
