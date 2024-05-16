@@ -5,7 +5,7 @@ PRAGMA locking_mode = EXCLUSIVE;
 PRAGMA synchronous = OFF;
 PRAGMA threads = 4;
 PRAGMA trusted_schema = OFF;
-PRAGMA page_size = 65535;
+PRAGMA page_size = 65536;
 VACUUM;
 PRAGMA locking_mode = NORMAL;
 
