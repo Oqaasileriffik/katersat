@@ -115,7 +115,7 @@ for line in sys.stdin:
 			if (m := re.match(r'^((?:i?\d?\p{Lu}\p{Ll}[^/\s]*(?: |$))+)', flex)):
 				flex = re.sub(r'\bi(\p{Lu})', r'\1', m[1]).split(' ')
 				for fi in range(len(flex), 0, -1):
-					ana2 = (f'{ana} %s' % ' '.join(flex[0:fi])).strip()
+					ana2 = ('%s %s' % (ana, ' '.join(flex[0:fi]).strip()))
 					anas.append(ana2)
 					if re.search(r' \dPl(O)?$', ana2):
 						anas.append(re.sub(r' (\d)Pl(O)?$', r' \1Sg\2', ana2))
