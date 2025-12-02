@@ -13,7 +13,7 @@ db = con.cursor()
 tbls = {
 	'kat_genders': 'gen_code',
 	'kat_languages': 'lang_code',
-	'kat_registers': 'reg_code',
+	'kat_domains': 'dom_id',
 	'kat_semclasses': 'sem_code',
 	'kat_valence': 'val_id',
 	'kat_wordclasses': 'wc_class',

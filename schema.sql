@@ -33,14 +33,15 @@ CREATE TABLE kat_languages (
 );
 
 
-CREATE TABLE kat_registers (
-	reg_code TEXT NOT NULL,
-	reg_eng TEXT NOT NULL,
-	reg_dan TEXT DEFAULT NULL,
-	reg_kal TEXT DEFAULT NULL,
+CREATE TABLE kat_domains (
+	dom_id INTEGER NOT NULL,
+	dom_code TEXT NOT NULL,
+	dom_eng TEXT NOT NULL,
+	dom_dan TEXT DEFAULT NULL,
+	dom_kal TEXT DEFAULT NULL,
 
-	PRIMARY KEY (reg_code),
-	UNIQUE (reg_eng)
+	PRIMARY KEY (dom_id),
+	UNIQUE (dom_code)
 );
 
 
